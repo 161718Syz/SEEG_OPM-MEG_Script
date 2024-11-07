@@ -1,0 +1,87 @@
+getwd()
+setwd("E:/SEEG-MEG raw data")
+getwd()
+
+#Library packages
+library(irrCAC)
+library(caret)
+library(pROC)
+
+#Data grouping
+total <- megdata
+temporal <- megdata[grep('^(RT|LT)', megdata[[1]]), ]
+extemporal <- megdata[grep('^(RF|LF|RP|LP|RO|LO|RI|LI)', megdata[[1]]), ]
+
+#Calculate the values of κ and pa
+result <- gwet.ac1.raw(total[,c(2,3)])$est
+result_t <- gwet.ac1.raw(temporal[,c(2,3)])$est
+result_ext <- gwet.ac1.raw(extemporal[,c(2,3)])$est
+
+#Calculation of clinical indicators for the Total group
+total$IC_binary <- ifelse(total$`IC(SEEG/ECoG)` == 1, T, F)
+glm_model_total <- glm(IC_binary ~ MEG, data = total, family = poisson)
+predicted_prob_total <- predict(glm_model_total,newdata = total, type = "response")
+roc_curve_total <- roc(total$IC_binary, predicted_prob_total)
+best_threshold_total <- coords(roc_curve_total, "best", ret = "threshold")
+confusion_matrix_total <- confusionMatrix(as.factor(predicted_prob_total > as.numeric(best_threshold_total)), factor(total$IC_binary))
+confusion_table_total <- confusion_matrix_total[["table"]]
+TP_total <- confusion_matrix_total[["table"]][2, 2]
+TN_total <- confusion_matrix_total[["table"]][1, 1]
+FP_total <- confusion_matrix_total[["table"]][2, 1]
+FN_total <- confusion_matrix_total[["table"]][1, 2]
+sensitivity_total <- TP_total / (TP_total + FN_total)
+specificity_total <- TN_total / (TN_total + FP_total)
+ppv_total <- TP_total / (TP_total + FP_total)
+npv_total <- TN_total / (TN_total + FN_total)
+sensitivity_ci_total <- binom.test(TP_total, TP_total + FN_total)$conf.int
+specificity_ci_total <- binom.test(TN_total, TN_total + FP_total)$conf.int
+ppv_ci_total <- binom.test(TP_total, TP_total + FP_total)$conf.int
+npv_ci_total <- binom.test(TN_total, TN_total + FN_total)$conf.int
+tab_total <- matrix(c(TP_total, FP_total, FN_total, TN_total), nrow = 2, byrow = TRUE)
+fisher_p_value_total <- fisher.test(tab_total)$p.value
+
+#Calculation of clinical indicators for the temporal group
+temporal$IC_binary <- ifelse(temporal$`IC(SEEG/ECoG)` == 1, T, F)
+glm_model_t <- glm(IC_binary ~ MEG, data = temporal, family = poisson)
+predicted_prob_t <- predict(glm_model_t,newdata = temporal, type = "response")
+roc_curve_t <- roc(temporal$IC_binary, predicted_prob_t)
+best_threshold_t <- coords(roc_curve_t, "best", ret = "threshold")
+confusion_matrix_t <- confusionMatrix(as.factor(predicted_prob_t > as.numeric(best_threshold_t)), factor(temporal$IC_binary))
+confusion_table_t <- confusion_matrix_t[["table"]]
+TP_t <- confusion_matrix_t[["table"]][2, 2]
+TN_t <- confusion_matrix_t[["table"]][1, 1]
+FP_t <- confusion_matrix_t[["table"]][2, 1]
+FN_t <- confusion_matrix_t[["table"]][1, 2]
+sensitivity_t <- TP_t / (TP_t + FN_t)
+specificity_t <- TN_t / (TN_t + FP_t)
+ppv_t <- TP_t / (TP_t + FP_t)
+npv_t <- TN_t / (TN_t + FN_t)
+sensitivity_ci_t <- binom.test(TP_t, TP_t + FN_t)$conf.int
+specificity_ci_t <- binom.test(TN_t, TN_t + FP_t)$conf.int
+ppv_ci_t <- binom.test(TP_t, TP_t + FP_t)$conf.int
+npv_ci_t <- binom.test(TN_t, TN_t + FN_t)$conf.int
+tab_t <- matrix(c(TP_t, FP_t, FN_t, TN_t), nrow = 2, byrow = TRUE)
+fisher_p_value_t <- fisher.test(tab_t)$p.value
+
+#Calculation of clinical indicators for the extemporal group
+extemporal$IC_binary <- ifelse(extemporal$`IC(SEEG/ECoG)` == 1, T, F)
+glm_model_ext <- glm(IC_binary ~ MEG, data = extemporal, family = poisson)
+predicted_prob_ext <- predict(glm_model_ext,newdata = extemporal, type = "response")
+roc_curve_ext <- roc(extemporal$IC_binary, predicted_prob_ext)
+best_threshold_ext <- coords(roc_curve_ext, "best", ret = "threshold")
+confusion_matrix_ext <- confusionMatrix(as.factor(predicted_prob_ext > as.numeric(best_threshold_ext)), factor(extemporal$IC_binary))
+confusion_table_ext <- confusion_matrix_ext[["table"]]
+TP_ext <- confusion_matrix_ext[["table"]][2, 2]
+TN_ext <- confusion_matrix_ext[["table"]][1, 1]
+FP_ext <- confusion_matrix_ext[["table"]][2, 1]
+FN_ext <- confusion_matrix_ext[["table"]][1, 2]
+sensitivity_ext <- TP_ext / (TP_ext + FN_ext)
+specificity_ext <- TN_ext / (TN_ext + FP_ext)
+ppv_ext <- TP_ext / (TP_ext + FP_ext)
+npv_ext <- TN_ext / (TN_ext + FN_ext)
+sensitivity_ci_ext <- binom.test(TP_ext, TP_ext + FN_ext)$conf.int
+specificity_ci_ext <- binom.test(TN_ext, TN_ext + FP_ext)$conf.int
+ppv_ci_ext <- binom.test(TP_ext, TP_ext + FP_ext)$conf.int
+npv_ci_ext <- binom.test(TN_ext, TN_ext + FN_ext)$conf.int
+tab_ext <- matrix(c(TP_ext, FP_ext, FN_ext, TN_ext), nrow = 2, byrow = TRUE)
+fisher_p_value_ext <- fisher.test(tab_ext)$p.value
